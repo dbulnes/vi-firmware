@@ -161,6 +161,9 @@ void openxc::pipeline::publish(openxc_VehicleMessage* message,
     message->timestamp = syst.tm;
     message->has_timestamp = true;
     #elif defined TELIT_HE910_SUPPORT
+    //Update gps timestamp
+    //pipeline->telit->getGPSLocation(true);
+    //message->timestamp = pipeline->telit->getGPSTime();//uptimeMs();
     message->timestamp = uptimeMs();
     message->has_timestamp = true;
     #endif

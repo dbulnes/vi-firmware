@@ -138,7 +138,7 @@ def build_options():
         'DEFAULT_ALLOW_RAW_WRITE_UART': env.allow_raw_uart_write,
         'DEFAULT_ALLOW_RAW_WRITE_USB': True,
         'DEFAULT_OUTPUT_FORMAT': env.payload_format,
-        'DEFAULT_RECURRING_OBD2_REQUESTS_STATUS': False,
+        'DEFAULT_RECURRING_OBD2_REQUESTS_STATUS': True,
         'DEFAULT_POWER_MANAGEMENT': env.power_management,
         'DEFAULT_USB_PRODUCT_ID': env.usb_product_id,
         'DEFAULT_EMULATED_DATA_STATUS': False,

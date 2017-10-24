@@ -75,17 +75,17 @@ openxc::telitHE910::TelitDevice telitDevice = {
     config: {
         globalPositioningSettings: {
             gpsEnable: true, 
-            gpsInterval: 5000, 
-            gpsEnableSignal_gps_time: false, 
-            gpsEnableSignal_gps_latitude: true, 
-            gpsEnableSignal_gps_longitude: true, 
+            gpsInterval: 2000, 
+            gpsEnableSignal_gps_time: true, 
+            gpsEnableSignal_gps_latitude: false, 
+            gpsEnableSignal_gps_longitude: false, 
             gpsEnableSignal_gps_hdop: false, 
-            gpsEnableSignal_gps_altitude: true, 
+            gpsEnableSignal_gps_altitude: false, 
             gpsEnableSignal_gps_fix: true, 
             gpsEnableSignal_gps_course: false, 
             gpsEnableSignal_gps_speed: true, 
             gpsEnableSignal_gps_speed_knots: false, 
-            gpsEnableSignal_gps_date: false, 
+            gpsEnableSignal_gps_date: true, 
             gpsEnableSignal_gps_nsat: false
         },
         networkOperatorSettings: {

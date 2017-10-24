@@ -57,6 +57,7 @@ static uint8_t sendBuffer[SEND_BUFFER_SIZE];
 static uint8_t* pSendBuffer = sendBuffer;
 
 static TELIT_CONNECTION_STATE state = telit::POWER_OFF;
+static uint64_t GPSTime = 0;
 
 /*PRIVATE FUNCTIONS*/
 
@@ -69,6 +70,7 @@ static void sendData(TelitDevice* device, char* data, unsigned int len);
 static void clearRxBuffer(void);
 static bool getResponse(const char* startToken, const char* stopToken, char* response, unsigned int maxLen);
 static bool parseGPSACP(const char* GPSACP);
+static uint64_t unixTimestamp(int year, int month, int day, int hour, int min, int sec, int millisec);
 
 namespace openxc {
 namespace telitHE910 {
@@ -1401,13 +1403,14 @@ bool openxc::telitHE910::getGPSPowerState(bool* enable) {
 
 }
 
-bool openxc::telitHE910::getGPSLocation() {
+bool openxc::telitHE910::getGPSLocation(bool forceUpdate) {
 
     bool rc = true;
     char temp[128] = {};
     static unsigned long next_update = 0;
     
-    if(uptimeMs() < next_update) {
+    //If we are forcing an update, ignore the update interval
+    if(!forceUpdate && uptimeMs() < next_update) {
         goto fcn_exit;
     }
 
@@ -1428,7 +1431,41 @@ bool openxc::telitHE910::getGPSLocation() {
     
     fcn_exit:
     return rc;
+}
 
+uint64_t unixTimestamp(int year, int month, int day, int hour, int min, int sec, int millisec) {
+  const short days_since_beginning_of_year[12] = {0,31,59,90,120,151,181,212,243,273,304,334};
+ 
+  int leap_years = ((year-1)-1968)/4
+                  - ((year-1)-1900)/100
+                  + ((year-1)-1600)/400;
+ 
+  long days_since_1970 = (year-1970)*365 + leap_years
+                      + days_since_beginning_of_year[month-1] + day-1;
+ 
+  if ( (month>2) && (year%4==0 && (year%100!=0 || year%400==0)) )
+    days_since_1970 += 1; /* +leap day, if year is a leap year */
+ 
+  return millisec + (sec + 60 * ( min + 60 * (hour + 24*days_since_1970) ))/1000;
+}
+
+bool openxc::telitHE910::setGPSTime(char * newGPSTime, char * newGPSDate) {
+    //Convert our c string gps time (HHMMSSsss) to uint64_t unix time
+    //Check that our parameters are non-empty, subtract 1 to ignore terminating '\0'
+    if ((sizeof(newGPSTime) - 1) >= 10 && (sizeof(newGPSDate) - 1) >= 10) {
+        
+        return true;
+    }
+
+    return false; //zero length string passed
+}
+
+bool openxc::telitHE910::setGPSTime(uint64_t newGPSTime) {
+    GPSTime = newGPSTime;
+}
+
+uint64_t openxc::telitHE910::getGPSTime() {
+    return GPSTime;
 }
 
 static void publishGPSSignal(const char* field_name, char* field_value, openxc::pipeline::Pipeline* pipeline) {
@@ -1485,6 +1522,7 @@ static bool parseGPSACP(const char* GPSACP) {
         validString[i] = (p2-p1 > 0) ? true : false;
         p1=p2+1;
     }
+
     if(*p1 > 0x2F && *p1 < 0x3A) {
         memcpy(&splitString[10][0], p1, 2);
         validString[10] = true;
@@ -1552,6 +1590,8 @@ static bool parseGPSACP(const char* GPSACP) {
     
     // 'gps_date'
     if(validString[9] && gpsConfig->gpsEnableSignal_gps_date) {
+        //set the gps time variable 
+        openxc::telitHE910::setGPSTime(&splitString[0][0], &splitString[9][0]);
         publishGPSSignal("gps_date", &splitString[9][0], pipeline);
     }
     

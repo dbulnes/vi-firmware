@@ -293,8 +293,16 @@ bool setGPSPowerState(bool enable);
 /*Public: Returns power state of the modem's GPS chip.*/
 bool getGPSPowerState(bool* enable);
 
-/*Public: Returns the GPS location string from the modem.*/
-bool getGPSLocation();
+/*Public: Returns the GPS location string from the modem.
+ * forceUpdate: flag that ignores the gps update interval and forces a location update
+ */
+bool getGPSLocation(bool forceUpdate = false);
+
+bool setGPSTime(char * newGPSTime, char * newGPSDate);
+
+bool setGPSTime(uint64_t newGPSTime);
+
+uint64_t getGPSTime();
 
 /*
  * PIPELINE FUNCTIONS
