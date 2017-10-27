@@ -157,15 +157,18 @@ void sendToNetwork(Pipeline* pipeline, uint8_t* message, int messageSize,
 void openxc::pipeline::publish(openxc_VehicleMessage* message,
         Pipeline* pipeline) {
     uint8_t payload[MAX_OUTGOING_PAYLOAD_SIZE] = {0};
+    
     #ifdef RTC_SUPPORT
-    message->timestamp = syst.tm;
-    message->has_timestamp = true;
-    #elif defined TELIT_HE910_SUPPORT
-    //Update gps timestamp
-    //pipeline->telit->getGPSLocation(true);
-    //message->timestamp = pipeline->telit->getGPSTime();//uptimeMs();
-    message->timestamp = uptimeMs();
-    message->has_timestamp = true;
+        message->timestamp = 400;
+        message->has_timestamp = true;
+    #endif
+
+    #ifdef TELIT_HE910_SUPPORT
+        //Update gps timestamp
+        openxc::telitHE910::getGPSLocation(true);
+        message->timestamp = openxc::telitHE910::getGPSTime();//uptimeMs();
+        //message->timestamp = 600;
+        message->has_timestamp = true;
     #endif
     
     size_t length = payload::serialize(message, payload, sizeof(payload),

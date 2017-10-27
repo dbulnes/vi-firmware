@@ -21,23 +21,23 @@ using openxc::pipeline::Pipeline;
 
 static const char* NUMERICAL_SIGNALS[NUMERICAL_SIGNAL_COUNT] = {
     "steering_wheel_angle",
-    "torque_at_transmission",
-    "engine_speed",
-    "vehicle_speed",
-    "accelerator_pedal_position",
-    "odometer",
-    "latitude",
-    "longitude",
-    "fuel_level",
-    "fuel_consumed_since_restart",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
+    "steering_wheel_angle",
 };
 
 static const char* BOOLEAN_SIGNALS[BOOLEAN_SIGNAL_COUNT] = {
     "parking_brake_status",
-    "brake_pedal_status",
-    "headlamp_status",
-    "high_beam_status",
-    "windshield_wiper_status",
+    "parking_brake_status",
+    "parking_brake_status",
+    "parking_brake_status",
+    "parking_brake_status",
 };
 
 static const char* STATE_SIGNALS[STATE_SIGNAL_COUNT] = {

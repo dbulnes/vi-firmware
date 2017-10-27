@@ -57,7 +57,7 @@ static uint8_t sendBuffer[SEND_BUFFER_SIZE];
 static uint8_t* pSendBuffer = sendBuffer;
 
 static TELIT_CONNECTION_STATE state = telit::POWER_OFF;
-static uint64_t GPSTime = 0;
+static uint64_t GPSTime = 1;
 
 /*PRIVATE FUNCTIONS*/
 
@@ -70,7 +70,7 @@ static void sendData(TelitDevice* device, char* data, unsigned int len);
 static void clearRxBuffer(void);
 static bool getResponse(const char* startToken, const char* stopToken, char* response, unsigned int maxLen);
 static bool parseGPSACP(const char* GPSACP);
-static uint64_t unixTimestamp(int year, int month, int day, int hour, int min, int sec, int millisec);
+static uint64_t unixTimestamp(uint year, uint month, uint day, uint hour, uint min, uint sec, uint millisec);
 
 namespace openxc {
 namespace telitHE910 {
@@ -1433,31 +1433,43 @@ bool openxc::telitHE910::getGPSLocation(bool forceUpdate) {
     return rc;
 }
 
-uint64_t unixTimestamp(int year, int month, int day, int hour, int min, int sec, int millisec) {
-  const short days_since_beginning_of_year[12] = {0,31,59,90,120,151,181,212,243,273,304,334};
- 
-  int leap_years = ((year-1)-1968)/4
-                  - ((year-1)-1900)/100
-                  + ((year-1)-1600)/400;
- 
-  long days_since_1970 = (year-1970)*365 + leap_years
+//Return millisecond timestamp in unix time
+uint64_t unixTimestamp(uint year, uint month, uint day, uint hour, uint min, uint sec, uint millisec) {
+    const short days_since_beginning_of_year[12] = {0,31,59,90,120,151,181,212,243,273,304,334};
+
+    int leap_years = ((year-1)-1968)/4 - ((year-1)-1900)/100 + ((year-1)-1600)/400;
+
+    long days_since_1970 = (year-1970)*365 + leap_years
                       + days_since_beginning_of_year[month-1] + day-1;
- 
-  if ( (month>2) && (year%4==0 && (year%100!=0 || year%400==0)) )
-    days_since_1970 += 1; /* +leap day, if year is a leap year */
- 
-  return millisec + (sec + 60 * ( min + 60 * (hour + 24*days_since_1970) ))/1000;
+
+    if ((month>2) && (year%4==0 && (year%100!=0 || year%400==0))) {
+        days_since_1970 += 1; /* +leap day, if year is a leap year */
+    }
+
+    return millisec + (sec + 60 * ( min + 60 * (hour + 24 * days_since_1970) ))*1000;
 }
 
 bool openxc::telitHE910::setGPSTime(char * newGPSTime, char * newGPSDate) {
-    //Convert our c string gps time (HHMMSSsss) to uint64_t unix time
+    //Convert our c string gps time (HHMMSS.sss) and date (ddmmyy) to uint64_t unix time
     //Check that our parameters are non-empty, subtract 1 to ignore terminating '\0'
-    if ((sizeof(newGPSTime) - 1) >= 10 && (sizeof(newGPSDate) - 1) >= 10) {
-        
-        return true;
+    if ((sizeof(newGPSTime) - 1) >= 10 && (sizeof(newGPSDate) - 1) >= 6) {
+        uint year, month, day, hour, min, sec, millis;
+        //Let's parse the c strings and convert to integers
+        hour    = newGPSTime[0] * 10 + newGPSTime[1];
+        min     = newGPSTime[2] * 10 + newGPSTime[3];
+        sec     = newGPSTime[4] * 10 + newGPSTime[5];
+        millis  = newGPSTime[7] * 100 + newGPSTime[8] * 10 + newGPSTime[9];
+
+        day     = newGPSDate[0] * 10 + newGPSDate[1];
+        month   = newGPSDate[2] * 10 + newGPSDate[3];
+        year    = newGPSDate[4] * 10 + newGPSDate[5] + 2000; //Add 2000 to the two digit year
+
+        GPSTime = unixTimestamp(year, month, day, hour, min, sec, millis);
+
+        return (GPSTime > 0);
     }
 
-    return false; //zero length string passed
+    return false; //invalid length c strings passed
 }
 
 bool openxc::telitHE910::setGPSTime(uint64_t newGPSTime) {
@@ -1531,6 +1543,8 @@ static bool parseGPSACP(const char* GPSACP) {
     // 'gps_time'
     if(validString[0] && gpsConfig->gpsEnableSignal_gps_time) {
         publishGPSSignal("gps_time", &splitString[0][0], pipeline);
+    } else {
+        openxc::telitHE910::setGPSTime(2100);
     }
     
     // 'gps_latitude'
@@ -1591,8 +1605,12 @@ static bool parseGPSACP(const char* GPSACP) {
     // 'gps_date'
     if(validString[9] && gpsConfig->gpsEnableSignal_gps_date) {
         //set the gps time variable 
-        openxc::telitHE910::setGPSTime(&splitString[0][0], &splitString[9][0]);
+        if(!openxc::telitHE910::setGPSTime(&splitString[0][0], &splitString[9][0])){
+            openxc::telitHE910::setGPSTime(1200);
+        }
         publishGPSSignal("gps_date", &splitString[9][0], pipeline);
+    } else {
+        openxc::telitHE910::setGPSTime(2200);
     }
     
     // 'gps_nsat'

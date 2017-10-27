@@ -1,0 +1,18 @@
+{
+	"buses": {
+		"hs": {
+			"controller": 1,
+			"raw_writable": true,
+			"speed": 500000
+		}
+	},
+	"diagnostic_messages": [{
+		"bus": "hs",
+		"id": 2015,
+		"mode": 1,
+		"pid": 13,
+		"frequency": 10,
+		"decoder": "handleObd2Pid",
+		"name": "vehicle_speed"
+	}]
+}
